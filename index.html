@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hidden Fish Calculator</title>
+  <style>
+    :root {
+      --bg: #1e1e1e;
+      --card: #2a2d2f;
+      --accent: #00bcd4;
+      --text: #f0f0f0;
+      --muted: #999;
+      --input-bg: #333;
+      --input-border: #555;
+    }
+
+    body {
+      margin: 0;
+      padding: 2em;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 1.5em;
+      text-align: center;
+    }
+
+    .container {
+      background: var(--card);
+      padding: 2em;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+      max-width: 500px;
+      width: 100%;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-top: 15px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      font-size: 1em;
+      color: var(--text);
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    #result {
+      margin-top: 25px;
+      background: #1a1c1e;
+      padding: 1em;
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      font-size: 1.05em;
+      line-height: 1.6em;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 1em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Hidden Fish Calculator</h1>
+  <div class="container">
+    <label for="speed">Fishing Speed:</label>
+    <input type="text" id="speed" value="0.1"/>
+
+    <label for="bulk">Fishing Bulk:</label>
+    <input type="text" id="bulk" value="10"/>
+
+    <label for="luck">Hidden Luck:</label>
+    <input type="text" id="luck" value="1.0"/>
+
+    <label for="chance">Base Chance (1/200m Hidden Fish):</label>
+    <input type="text" id="chance" value="200000000"/>
+
+    <div id="result">
+      <strong>Result:</strong><br>
+      Expected catches: –<br>
+      Estimated time: –<br>
+    </div>
+  </div>
+
+  <script>
+    const inputs = document.querySelectorAll("input");
+    const result = document.getElementById("result");
+
+    window.onload = () => {
+      inputs.forEach(input => {
+        const saved = localStorage.getItem(input.id);
+        if (saved !== null) input.value = saved;
+      });
+      calculate();
+    };
+
+    inputs.forEach(input => {
+      input.addEventListener("input", () => {
+        localStorage.setItem(input.id, input.value);
+        calculate();
+      });
+    });
+
+    function sanitizeInput(id) {
+      const raw = document.getElementById(id).value;
+      return parseFloat(raw.replace(",", "."));
+    }
+
+    function formatTime(seconds) {
+      const d = Math.floor(seconds / 86400);
+      seconds %= 86400;
+      const h = Math.floor(seconds / 3600);
+      seconds %= 3600;
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      return `${d}d ${h}h ${m}m ${s}s`;
+    }
+
+    function calculate() {
+      const speed = sanitizeInput("speed");
+      const bulk = sanitizeInput("bulk");
+      const luck = sanitizeInput("luck");
+      const chance = sanitizeInput("chance");
+
+      if (isNaN(speed) || isNaN(bulk) || isNaN(luck) || isNaN(chance) || speed <= 0 || chance <= 0 || luck <= 0 || bulk <= 0) {
+        result.innerHTML = `<strong>Result:</strong><br>Invalid input. Please check your values.`;
+        return;
+      }
+
+      const effectiveChance = luck / chance;
+      const expectedCatches = 1 / effectiveChance;
+      const effectiveBulk = bulk / 100;
+      const fishPerSecond = effectiveBulk / speed;
+      const expectedTime = expectedCatches / fishPerSecond;
+
+      result.innerHTML = `<strong>Result:</strong><br>
+        Expected catches: ${expectedCatches.toLocaleString(undefined, { maximumFractionDigits: 0 })}<br>
+        Estimated time: ${formatTime(expectedTime)}`;
+    }
+  </script>
+</body>
+</html>
